@@ -1,0 +1,89 @@
+#!/usr/bin/env groovy
+pipeline {
+    agent any
+    
+    parameters {
+        string(name: 'PERSON', defaultValue: 'Mr Jenkins', description: 'Who should I say hello to?')
+        text(name: 'BIOGRAPHY', defaultValue: '', description: 'Enter some information about the person')
+        booleanParam(name: 'TOGGLE', defaultValue: true, description: 'Toggle this value')
+        choice(name: 'CHOICE', choices: ['One', 'Two', 'Three'], description: 'Pick something')
+        password(name: 'PASSWORD', defaultValue: 'SECRET', description: 'Enter a password')
+    }
+
+    environment { 
+        DEPLOY_TO = 'production'
+    }
+    
+    stages {
+        stage('Initialization') {
+            steps {
+                sh 'python3 --version'
+                echo "${DEPLOY_TO}"
+            }
+        }
+        
+        stage ('Build') {
+           steps {
+             sh "mkdir -p output"
+             writeFile file: "output/usefulfile.txt", text: "This file is useful, need to archive it."
+             writeFile file: "output/uselessfile.md", text: "This file is useless, no need to archive it."
+             archiveArtifacts artifacts: 'output/*.txt', excludes: 'output/*.md'
+           }        
+        }
+        
+        stage('Example') {
+            steps {
+                echo "Hello ${params.PERSON}"
+                echo "Biography: ${params.BIOGRAPHY}"
+                echo "Toggle: ${params.TOGGLE}"
+                echo "Choice: ${params.CHOICE}"
+                echo "Password: ${params.PASSWORD}"
+            }
+            post {
+                always {
+                    echo "Post stage Example"
+                }
+            }
+        }
+        stage('Hello') {
+            steps {
+                echo 'Hello World'
+            }
+        }
+        
+        stage('ls') {
+            steps {
+                echo 'sh command ls -l'
+                sh 'ls -l'
+                sh 'pwd'
+               
+            }
+        }
+        stage('Sanity check') {
+            steps {
+                input "Does the staging environment look ok?"
+            }
+        }
+        stage('java') {
+            steps {
+                echo 'java version'
+                sh 'java -version'
+            }
+        }
+        
+    }
+    post { 
+        success {
+            echo 'I succeeded!'
+           //  mail to: 'biolansys@gmail.com',
+           //  subject: "Success",
+           //  body: "Everything is ok, conngratulations my dear ..."
+        }
+        changed {
+            echo 'Things were different before...'
+        }
+        always { 
+            echo 'I will always say Hello again!'
+        }
+    }
+}
